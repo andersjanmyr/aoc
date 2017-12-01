@@ -9,8 +9,8 @@ func consecutives(numbers []int) []int {
 	length := len(numbers)
 	cons := make([]int, 0)
 	found := false
-	for i := 0; i < length-1; i++ {
-		if numbers[i] == numbers[i+1] {
+	for i := 0; i < length; i++ {
+		if numbers[i] == numbers[(i+1)%length] {
 			cons = append(cons, numbers[i])
 			found = true
 		} else if found {
@@ -18,13 +18,8 @@ func consecutives(numbers []int) []int {
 			found = false
 		}
 	}
-	if numbers[0] == numbers[length-1] {
-		if numbers[0] != numbers[1] {
-			cons = append(cons, numbers[0])
-		}
-		if numbers[length-2] != numbers[length-1] {
-			cons = append(cons, numbers[length-1])
-		}
+	if found {
+		cons = append(cons, numbers[length-1])
 	}
 	return cons
 }
