@@ -36,14 +36,6 @@ func divisible(numbers []int) int {
 	return 0
 }
 
-func total(matrix [][]int) int {
-	s := 0
-	for _, n := range matrix {
-		s += checksum(n)
-	}
-	return s
-}
-
 func toNumbers(l string) []int {
 	ns := strings.Split(l, "\t")
 	numbers := make([]int, len(ns))
@@ -62,21 +54,17 @@ func toMatrix(s string) [][]int {
 	return numbers
 }
 
-func totalDivisible(matrix [][]int) int {
+func total(matrix [][]int, f func([]int) int) int {
 	s := 0
 	for _, n := range matrix {
-		d := divisible(n)
-		fmt.Println(d)
+		d := f(n)
 		s += d
 	}
 	return s
 }
 
 func main() {
-	bytes, err := ioutil.ReadFile("input.txt")
-	if err != nil {
-		panic(err)
-	}
+	bytes, _ := ioutil.ReadFile("input.txt")
 	data := string(bytes)
 	matrix := toMatrix(data)
 	length := len(bytes) - 1
@@ -84,6 +72,6 @@ func main() {
 	for i := 0; i < length; i++ {
 		numbers[i] = int(bytes[i]) - 48
 	}
-	fmt.Println(total(matrix))
-	fmt.Println(totalDivisible(matrix))
+	fmt.Println(total(matrix, checksum))
+	fmt.Println(total(matrix, divisible))
 }
