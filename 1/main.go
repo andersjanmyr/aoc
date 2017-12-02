@@ -8,20 +8,22 @@ import (
 func consecutives(numbers []int) []int {
 	length := len(numbers)
 	cons := make([]int, 0)
-	found := false
 	for i := 0; i < length; i++ {
 		if numbers[i] == numbers[(i+1)%length] {
 			cons = append(cons, numbers[i])
-			found = true
-		} else if found {
-			cons = append(cons, numbers[i])
-			found = false
 		}
 	}
-	if found {
-		cons = append(cons, numbers[length-1])
-	}
 	return cons
+}
+
+func sum(numbers []int) int {
+	cons := consecutives(numbers)
+	fmt.Println(cons)
+	s := 0
+	for _, n := range cons {
+		s += n
+	}
+	return s
 }
 
 func main() {
@@ -35,11 +37,5 @@ func main() {
 		numbers[i] = int(bytes[i]) - 48
 	}
 	fmt.Println(numbers)
-	cons := consecutives(numbers)
-	fmt.Println(cons)
-	sum := 0
-	for _, n := range cons {
-		sum += n
-	}
-	fmt.Println(sum)
+	fmt.Println(sum(numbers))
 }
