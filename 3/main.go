@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"math"
 )
+
+var coordIndex map[point]int
+var coords map[int]point
+var values []int
 
 /*
 17  16  15  14  13
@@ -12,34 +17,9 @@ import (
 21  22  23---> ...
 */
 func manhattan(n int) int {
-	if n == 1 {
-		return 0
-	}
-	pow := 8
-	count := 1
-	var i int
-	for i = 1; count+pow < n; i++ {
-		count += pow
-		pow += 8
-	}
-
-	return i + delta(i, n-count)
-}
-
-func delta(level int, n int) int {
-	v := level - 1
-	d := -1
-	if v == 0 {
-		d = 1
-	}
-	for n > 1 {
-		n--
-		v += d
-		if v == level || v == 0 {
-			d = -d
-		}
-	}
-	return v
+	buildIndex(n)
+	p := coords[n]
+	return int(math.Abs(float64(p.X)) + math.Abs(float64(p.Y)))
 }
 
 func calcD(level, x, y, xd, yd int) (int, int) {
@@ -62,12 +42,9 @@ type point struct {
 	X, Y int
 }
 
-var coordIndex = make(map[point]int)
-var coords = make([]point, 100)
-
 func buildIndex(n int) {
 	coordIndex = make(map[point]int)
-	coords = make([]point, 100)
+	coords = make(map[int]point)
 	x := 0
 	y := 0
 	xd := 1
@@ -92,36 +69,11 @@ func buildIndex(n int) {
 	coords[1] = point{0, 0}
 }
 
-func coordinates(n int) (int, int) {
-	x := 0
-	y := 0
-	xd := 1
-	yd := 0
-	level := 1
-	count := 8
-	i := 1
-	for n > 1 {
-		i++
-		n--
-		x += xd
-		y += yd
-		if i-1 == count {
-			level++
-			count += level * 8
-		}
-		xd, yd = calcD(level, x, y, xd, yd)
-	}
-	return x, y
-}
-
-var values = make([]int, 100)
-
 func value(p point) int {
 	i := coordIndex[p]
 	if i >= len(values) {
 		return 0
 	}
-	fmt.Println(i, len(values))
 	val := values[i]
 	return val
 }
@@ -145,14 +97,13 @@ func summarize(p point) int {
 }
 
 func squareSum(n int) int {
+	values = make([]int, 100000)
 	buildIndex(n)
-	values = make([]int, 80)
 	values[1] = 1
 	for i := 2; i <= n; i++ {
 		p := coords[i]
 		values[i] = summarize(p)
 	}
-	fmt.Println(values)
 	return values[n]
 }
 

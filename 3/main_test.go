@@ -2,8 +2,6 @@ package main
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -49,37 +47,6 @@ func TestManhattanChecksum(t *testing.T) {
 	}
 }
 
-func TestDelta(t *testing.T) {
-	assert.Equal(t, 1, delta(2, 1))
-	assert.Equal(t, 0, delta(2, 2))
-	assert.Equal(t, 1, delta(2, 3))
-	assert.Equal(t, 2, delta(2, 4))
-}
-
-func TestCoordinates(t *testing.T) {
-	cases := [][]int{
-		{0, 0, 1},
-		{1, 0, 2},
-		{1, 1, 3},
-		{0, 1, 4},
-		{-1, 1, 5},
-		{-1, 0, 6},
-		{-1, -1, 7},
-		{0, -1, 8},
-		{1, -1, 9},
-		{2, -1, 10},
-		{2, -2, 25},
-		{3, -2, 26},
-	}
-	for _, c := range cases {
-		x, y := coordinates(c[2])
-		if x != c[0] || y != c[1] {
-			t.Errorf("Expected coordinates(%d) to equal: %d, %d, actual %d,%d", c[2], c[0], c[1], x, y)
-		}
-	}
-
-}
-
 /*
 147  142  133  122   59
 304    5    4    2   57
@@ -102,7 +69,7 @@ func TestSquareSum(t *testing.T) {
 		{54, 11},
 		{59, 13},
 		{806, 23},
-		{806, 63},
+		{349975, 63},
 	}
 	for _, c := range cases {
 		r := squareSum(c[1])
