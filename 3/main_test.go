@@ -39,7 +39,7 @@ func TestManhattanChecksum(t *testing.T) {
 		{6, 49},
 		{6, 51},
 		{31, 1024},
-		{30, 347991},
+		{480, 347991},
 	}
 	for _, c := range cases {
 		r := manhattan(c[1])
@@ -54,4 +54,60 @@ func TestDelta(t *testing.T) {
 	assert.Equal(t, 0, delta(2, 2))
 	assert.Equal(t, 1, delta(2, 3))
 	assert.Equal(t, 2, delta(2, 4))
+}
+
+func TestCoordinates(t *testing.T) {
+	cases := [][]int{
+		{0, 0, 1},
+		{1, 0, 2},
+		{1, 1, 3},
+		{0, 1, 4},
+		{-1, 1, 5},
+		{-1, 0, 6},
+		{-1, -1, 7},
+		{0, -1, 8},
+		{1, -1, 9},
+		{2, -1, 10},
+		{2, -2, 25},
+		{3, -2, 26},
+	}
+	for _, c := range cases {
+		x, y := coordinates(c[2])
+		if x != c[0] || y != c[1] {
+			t.Errorf("Expected coordinates(%d) to equal: %d, %d, actual %d,%d", c[2], c[0], c[1], x, y)
+		}
+	}
+
+}
+
+/*
+147  142  133  122   59
+304    5    4    2   57
+330   10    1    1   54
+351   11   23   25   26
+362  747  806--->   ...
+*/
+func TestSquareSum(t *testing.T) {
+	cases := [][]int{
+		{1, 1},
+		{1, 2},
+		{2, 3},
+		{4, 4},
+		{5, 5},
+		{10, 6},
+		{11, 7},
+		{23, 8},
+		{25, 9},
+		{26, 10},
+		{54, 11},
+		{59, 13},
+		{806, 23},
+		{806, 63},
+	}
+	for _, c := range cases {
+		r := squareSum(c[1])
+		if r != c[0] {
+			t.Errorf("Expected squareSum(%d) to equal: %d, actual %d", c[1], c[0], r)
+		}
+	}
 }
