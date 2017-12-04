@@ -96,6 +96,13 @@ func summarize(p point) int {
 	return s
 }
 
+/*
+147  142  133  122   59
+304    5    4    2   57
+330   10    1    1   54
+351   11   23   25   26
+362  747  806--->   ...
+*/
 func squareSum(n int) int {
 	values = make([]int, 100000)
 	buildIndex(n)
@@ -108,6 +115,6 @@ func squareSum(n int) int {
 }
 
 func main() {
-	fmt.Println(manhattan(1024))
-	fmt.Println(manhattan(347991))
+	fmt.Println("3a", manhattan(347991))
+	fmt.Println("3b", squareSum(63))
 }
