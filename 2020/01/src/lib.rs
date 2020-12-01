@@ -2,7 +2,22 @@ use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
-    println!("{:?}", num_matrix());
+    let (a, b, c) = twenty_twenty();
+    println!("{:?} {:?}", (a, b, c), a * b * c);
+}
+
+fn twenty_twenty() -> (i32, i32, i32) {
+    let ns = numbers();
+    for n in ns.iter() {
+        for m in ns.iter() {
+            for o in ns.iter() {
+                if n + m + o == 2020 {
+                    return (*n, *m, *o);
+                }
+            }
+        }
+    }
+    panic!("None")
 }
 
 fn numbers() -> Vec<i32> {
@@ -45,8 +60,9 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn test_matrix() {
-        let ns = matrix();
+        let ns = numbers();
         assert_eq!(ns.len(), 4);
     }
 
