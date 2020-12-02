@@ -2,22 +2,47 @@ use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
-    let (a, b, c) = twenty_twenty();
-    println!("{:?} {:?}", (a, b, c), a * b * c);
+    let e = entries();
+    let valid: Vec<&(i32, i32, char, String)> = e
+        .iter()
+        .filter(|(a, b, c, d)| {
+            let mut n = 0;
+            if nth(d, *a) == *c {
+                n += 1;
+            }
+            if nth(d, *b) == *c {
+                n += 1;
+            }
+            n == 1
+        })
+        .collect();
+    println!("{:?} {:?}", valid, valid.len());
 }
 
-fn twenty_twenty() -> (i32, i32, i32) {
-    let ns = numbers();
-    for n in ns.iter() {
-        for m in ns.iter() {
-            for o in ns.iter() {
-                if n + m + o == 2020 {
-                    return (*n, *m, *o);
-                }
-            }
+fn nth(s: &String, i: i32) -> char {
+    match s.chars().nth(i as usize - 1) {
+        Some(c) => c,
+        None => {
+            println!("{:?}", s);
+            'X'
         }
     }
-    panic!("None")
+}
+
+fn entries() -> Vec<(i32, i32, char, String)> {
+    let lines = strings();
+    lines.iter().map(|s| parse_line(s.to_string())).collect()
+}
+
+// l = "1-3 a: abcde"
+fn parse_line(l: String) -> (i32, i32, char, String) {
+    let parts = l.split(" ").collect::<Vec<&str>>();
+    let nums = parts[0].split("-").collect::<Vec<&str>>();
+    let a = nums[0].parse::<i32>().unwrap();
+    let b = nums[1].parse::<i32>().unwrap();
+    let c = parts[1].chars().next().unwrap();
+    let d = parts[2];
+    (a, b, c, d.to_string())
 }
 
 fn numbers() -> Vec<i32> {
@@ -60,14 +85,16 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn test_matrix() {
-        let ns = numbers();
-        assert_eq!(ns.len(), 4);
+        let ns = main();
     }
 
     #[test]
+    #[ignore]
     fn test_main() {
-        main();
+        assert_eq!(
+            (1, 3, 'a', "abcde".to_string()),
+            parse_line("1-3 a: abcde".to_string())
+        );
     }
 }
