@@ -2,22 +2,32 @@ use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
-    let (a, b, c) = twenty_twenty();
-    println!("{:?} {:?}", (a, b, c), a * b * c);
+    let ls = strings();
+    let v = vec![(1, 1), (1, 3), (1, 5), (1, 7), (2, 1)];
+    let ts: Vec<usize> = v.iter().map(|(d, r)| trees(*d, *r)).collect();
+    let prod = ts.iter().fold(1, |a, b| a * b);
+    println!("{:?}, {:?}", ts, prod);
 }
 
-fn twenty_twenty() -> (i32, i32, i32) {
-    let ns = numbers();
-    for n in ns.iter() {
-        for m in ns.iter() {
-            for o in ns.iter() {
-                if n + m + o == 2020 {
-                    return (*n, *m, *o);
-                }
-            }
+fn trees(d: usize, r: usize) -> usize {
+    let ls = strings();
+    let width = ls[0].len();
+    let mut y = 0;
+    let mut trees = 0;
+    let mut i = ls.iter();
+    for _ in 0..d {
+        println!("X");
+        i.next();
+    }
+    for i in (d..ls.len()).step_by(d) {
+        y = (y + r) % width;
+        let l = &ls[i];
+        let c = l.chars().nth(y).unwrap();
+        if c == '#' {
+            trees += 1
         }
     }
-    panic!("None")
+    trees
 }
 
 fn numbers() -> Vec<i32> {
