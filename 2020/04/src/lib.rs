@@ -5,7 +5,7 @@ use std::io::{self, prelude::*};
 
 pub fn main() {
     let ps = passports();
-    let valids: Vec<&Passport> = ps.iter().filter(|&p| p.is_valid()).collect();
+    let valids: Vec<Passport> = ps.into_iter().filter(|p| p.is_valid()).collect();
     println!("{:?}, {:?}", valids, valids.len());
 }
 
