@@ -2,80 +2,67 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-#[derive(Debug)]
-pub struct Rule {
+#[derive(Clone, Debug)]
+pub struct Instr {
     name: String,
-    has: Vec<ContainedRule>,
-}
-
-#[derive(Debug)]
-pub struct ContainedRule {
-    count: i32,
-    name: String,
+    num: i32,
 }
 
 pub fn main() {
-    let rules = parse_rules();
-    println!("{:?}", rules);
-    // let matching = traverse(&rules, "shiny gold");
-    // println!("{:?} {:?}", matching, matching.len());
-    let count = traverse2("shiny gold", &rules);
-    println!("{:?}", count - 1);
+    let instrs = parse_instr();
+
+    let (i, acc, ok) = exec(&instrs);
+    println!("{:?} {:?} {:?}", i, acc, ok);
+    for i in 0..instrs.len() {
+        let instr = &instrs[i];
+        if instr.name == "jmp" {
+            let mut new_instrs = instrs.clone();
+            new_instrs[i] = Instr {
+                name: "nop".to_string(),
+                num: instr.num,
+            };
+            let (i, acc, ok) = exec(&new_instrs);
+            if ok {
+                println!("{:?} {:?} {:?}", i, acc, ok);
+            }
+        }
+    }
 }
 
-fn parse_rules() -> Vec<Rule> {
+fn exec(instrs: &Vec<Instr>) -> (i32, i32, bool) {
+    let len = instrs.len() as i32;
+    let mut acc = 0;
+    let mut set = HashSet::new();
+    let mut i: i32 = 0;
+    while !set.contains(&i) && i < len {
+        set.insert(i);
+        let instr = &instrs[i as usize];
+        match instr.name.as_str() {
+            "nop" => i += 1,
+            "acc" => {
+                i += 1;
+                acc += instr.num
+            }
+            "jmp" => i += instr.num,
+            v => println!("{:?}", v),
+        }
+    }
+    (i, acc, i == len)
+}
+
+fn parse_instr() -> Vec<Instr> {
     let ls = strings();
     ls.iter().map(|l| parse_line(&l)).collect()
 }
 
-fn parse_line(l: &str) -> Rule {
-    let mut s = l.replace(",", "");
-    s = s.replace(".", "");
-    let parts: Vec<&str> = s.split(" ").collect();
-    let name = format!("{} {}", parts[0], parts[1]);
-    let mut has = Vec::new();
-    for i in (4..parts.len()).step_by(4) {
-        if parts[i] != "no" {
-            let cr = ContainedRule {
-                count: parts[i].parse::<i32>().unwrap(),
-                name: format!("{} {}", parts[i + 1], parts[i + 2]),
-            };
-            has.push(cr);
-        }
+fn parse_line(l: &str) -> Instr {
+    let parts: Vec<&str> = l.split(" ").collect();
+    let name = parts[0];
+    let num = parts[1].parse::<i32>().unwrap();
+    Instr {
+        name: name.to_string(),
+        num: num,
     }
-    Rule {
-        name: name,
-        has: has,
-    }
-}
-
-fn traverse(rules: &Vec<Rule>, bag: &str) -> Vec<String> {
-    let mut set = HashSet::new();
-    set.insert(bag.to_string());
-    let mut len = 0;
-    while len < set.len() {
-        len = set.len();
-        for r in rules {
-            println!("{:?}", r);
-            for cr in &r.has {
-                if set.contains(&cr.name) {
-                    println!("{:?}", cr.name);
-                    set.insert(r.name.to_string());
-                }
-            }
-        }
-        println!("{:?}\n", set);
-    }
-    set.remove(bag);
-    set.into_iter().collect()
-}
-
-fn traverse2(name: &str, rules: &Vec<Rule>) -> i32 {
-    let rule = rules.iter().find(|r| r.name == name).unwrap();
-    rule.has.iter().fold(1, |a, cr| {
-        let c = a + (cr.count * traverse2(&cr.name, rules));
-        c
-    })
 }
 
 fn groups() -> Vec<Vec<String>> {
