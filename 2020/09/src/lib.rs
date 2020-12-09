@@ -1,68 +1,41 @@
-use std::collections::HashSet;
+use combinations::Combinations;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-#[derive(Clone, Debug)]
-pub struct Instr {
-    name: String,
-    num: i32,
-}
-
 pub fn main() {
-    let instrs = parse_instr();
+    let ns = numbers();
 
-    let (i, acc, ok) = exec(&instrs);
-    println!("{:?} {:?} {:?}", i, acc, ok);
-    for i in 0..instrs.len() {
-        let instr = &instrs[i];
-        if instr.name == "jmp" {
-            let mut new_instrs = instrs.clone();
-            new_instrs[i] = Instr {
-                name: "nop".to_string(),
-                num: instr.num,
-            };
-            let (i, acc, ok) = exec(&new_instrs);
-            if ok {
-                println!("{:?} {:?} {:?}", i, acc, ok);
+    let (v, i) = find(&ns, 25);
+    println!("{:?} {:?} {:?}", ns, i, v);
+    let (i, j, min, max) = find_first_sum(&ns, v);
+    println!("{:?} {:?} {:?} {:?} {:?}", i, j, min, max, min + max);
+}
+
+fn find(ns: &Vec<i64>, l: usize) -> (i64, usize) {
+    for i in 0..(ns.len() - l) {
+        let sums: Vec<i64> = Combinations::new(ns[i..(i + l)].to_vec(), 2)
+            .map(|v| v[0] + v[1])
+            .collect();
+        let n = ns[i + l];
+        if !sums.contains(&n) {
+            return (n, i);
+        }
+    }
+    panic!("");
+}
+
+fn find_first_sum(ns: &Vec<i64>, s: i64) -> (usize, usize, i64, i64) {
+    for i in 0..ns.len() {
+        for j in i + 1..ns.len() {
+            let mut v = ns[i..j].to_vec();
+            let sum = v.iter().fold(0, |a, i| a + i);
+            if s == sum {
+                v.sort();
+                return (i, j - 1, v[0], v[v.len() - 1]);
             }
         }
     }
-}
-
-fn exec(instrs: &Vec<Instr>) -> (i32, i32, bool) {
-    let len = instrs.len() as i32;
-    let mut acc = 0;
-    let mut set = HashSet::new();
-    let mut i: i32 = 0;
-    while !set.contains(&i) && i < len {
-        set.insert(i);
-        let instr = &instrs[i as usize];
-        match instr.name.as_str() {
-            "nop" => i += 1,
-            "acc" => {
-                i += 1;
-                acc += instr.num
-            }
-            "jmp" => i += instr.num,
-            v => println!("{:?}", v),
-        }
-    }
-    (i, acc, i == len)
-}
-
-fn parse_instr() -> Vec<Instr> {
-    let ls = strings();
-    ls.iter().map(|l| parse_line(&l)).collect()
-}
-
-fn parse_line(l: &str) -> Instr {
-    let parts: Vec<&str> = l.split(" ").collect();
-    let name = parts[0];
-    let num = parts[1].parse::<i32>().unwrap();
-    Instr {
-        name: name.to_string(),
-        num: num,
-    }
+    panic!("");
 }
 
 fn groups() -> Vec<Vec<String>> {
@@ -81,9 +54,9 @@ fn groups() -> Vec<Vec<String>> {
     gs
 }
 
-fn numbers() -> Vec<i32> {
+fn numbers() -> Vec<i64> {
     let lines = strings();
-    lines.iter().map(|s| s.parse::<i32>().unwrap()).collect()
+    lines.iter().map(|s| s.parse::<i64>().unwrap()).collect()
 }
 
 fn num_matrix() -> Vec<Vec<i32>> {
