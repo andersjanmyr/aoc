@@ -29,9 +29,12 @@ fn find_first_sum(ns: &Vec<i64>, s: i64) -> (usize, usize, i64, i64) {
         for j in i + 1..ns.len() {
             let mut v = ns[i..j].to_vec();
             let sum = v.iter().fold(0, |a, i| a + i);
-            if s == sum {
+            if sum == s {
                 v.sort();
                 return (i, j - 1, v[0], v[v.len() - 1]);
+            }
+            if sum > s {
+                break;
             }
         }
     }
