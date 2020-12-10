@@ -1,44 +1,69 @@
-use combinations::Combinations;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
-    let ns = numbers();
+    let mut ns = numbers();
+    ns.sort();
+    let combs: Vec<Vec<i32>> = combinations(&ns.to_vec());
 
-    let (v, i) = find(&ns, 25);
-    println!("{:?} {:?} {:?}", ns, i, v);
-    let (i, j, min, max) = find_first_sum(&ns, v);
-    println!("{:?} {:?} {:?} {:?} {:?}", i, j, min, max, min + max);
+    println!("\n{:?} {:?}", combs, combs.len());
+    // let (ones, threes) = diffs(&ns);
+    // println!("{:?} {:?} {:?}", ones, threes, ones * threes);
+
+    // let (v, i) = find(&ns, 25);
+    // println!("{:?} {:?} {:?}", ns, i, v);
+    // let (i, j, min, max) = find_first_sum(&ns, v);
+    // println!("{:?} {:?} {:?} {:?} {:?}", i, j, min, max, min + max);
 }
 
-fn find(ns: &Vec<i64>, l: usize) -> (i64, usize) {
-    for i in 0..(ns.len() - l) {
-        let sums: Vec<i64> = Combinations::new(ns[i..(i + l)].to_vec(), 2)
-            .map(|v| v[0] + v[1])
-            .collect();
-        let n = ns[i + l];
-        if !sums.contains(&n) {
-            return (n, i);
+fn combinations(ns: &Vec<i32>) -> Vec<Vec<i32>> {
+    let high = ns[ns.len() - 1];
+    let mut v = ns.to_vec();
+    v.push(high + 3);
+    let mut queue: Vec<(i32, Vec<i32>)> = vec![(0, ns.to_vec())];
+    let mut done: HashMap<(i32, Vec<i32>), i32> = HashMap::new();
+    let mut combs: Vec<Vec<i32>> = Vec::new();
+    while !queue.is_empty() {
+        let (n, ns) = queue.remove(0);
+        let key = (n, ns.to_vec());
+        *done.entry(key).or_insert(0) += 1;
+        let pvs = possible_values_for(n, &ns);
+        for pv in pvs {
+            if pv.0 == high {
+                let v = ns.to_vec();
+                combs.push(v);
+            } else {
+                if !done.contains_key(&pv) {
+                    queue.push(pv);
+                }
+            }
         }
+        // println!("{:?} {:?} {:?}", n, ns, queue.len(),);
     }
-    panic!("");
+
+    println!("{:?} {:?} {:?}", done, done.len(), queue.len(),);
+    combs
 }
 
-fn find_first_sum(ns: &Vec<i64>, s: i64) -> (usize, usize, i64, i64) {
+fn possible_values_for(a: i32, ns: &Vec<i32>) -> Vec<(i32, Vec<i32>)> {
+    let mut pvs: Vec<(i32, Vec<i32>)> = Vec::new();
+    let mut v = ns.to_vec();
     for i in 0..ns.len() {
-        for j in i + 1..ns.len() {
-            let mut v = ns[i..j].to_vec();
-            let sum = v.iter().fold(0, |a, i| a + i);
-            if sum == s {
-                v.sort();
-                return (i, j - 1, v[0], v[v.len() - 1]);
-            }
-            if sum > s {
-                break;
-            }
+        let n = ns[i];
+        if is_valid(a, n) {
+            v.remove(0);
+            pvs.push((n, v.to_vec()));
+        } else {
+            break;
         }
     }
-    panic!("");
+    pvs
+}
+
+fn is_valid(a: i32, b: i32) -> bool {
+    let diff = (a - b).abs();
+    diff >= 1 && diff <= 3
 }
 
 fn groups() -> Vec<Vec<String>> {
@@ -57,9 +82,9 @@ fn groups() -> Vec<Vec<String>> {
     gs
 }
 
-fn numbers() -> Vec<i64> {
+fn numbers() -> Vec<i32> {
     let lines = strings();
-    lines.iter().map(|s| s.parse::<i64>().unwrap()).collect()
+    lines.iter().map(|s| s.parse::<i32>().unwrap()).collect()
 }
 
 fn num_matrix() -> Vec<Vec<i32>> {
@@ -98,11 +123,19 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_bin_part() {}
+    fn test_bin_part() {
+        let v = vec![1, 4, 5, 6, 7];
+        let pvs = combinations(&v);
+        println!("{:?}", pvs);
+    }
 
     #[test]
     #[ignore]
-    fn test_range() {}
+    fn test_possible_values_for() {
+        // let v = vec![4, 5, 6, 7];
+        // let pvs = possible_values_for(3, &v);
+        // println!("{:?}", pvs);
+    }
 
     #[test]
     fn test_main() {
