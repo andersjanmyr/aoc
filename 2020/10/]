@@ -1,8 +1,8 @@
-use itertools::Itertools;
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, prelude::*};
+#[macro_use]
+extern crate lazy_static;
+use std::collections::HashMap;
 
 pub fn main() {
     let mut ns = numbers();
@@ -22,78 +22,31 @@ pub fn main() {
 fn combinations(ns: &Vec<i32>) -> Vec<Vec<i32>> {
     let high = ns[ns.len() - 1];
     let mut v = ns.to_vec();
-    v.insert(0, 0);
     v.push(high + 3);
-    let map = calc_possible_values(&v);
-    let mut optionals = ns.to_vec();
-    let mut set: HashSet<Vec<i32>> = HashSet::new();
-    println!("OPT: {:?}", optionals);
-    let mut seed = 12345;
-    for (k, _) in map.iter() {
-        let m = map[&k].to_vec();
-        add_perms(&m, &mut set, &mut seed);
-        seed += 1;
-        if m.len() > 1 {
-            optionals.retain(|n| *n != m[0]);
-        }
-    }
-    let mut prod: i32 = 1;
-    for m in optionals.iter() {
-        let mut count = 0;
-        for s in set.iter() {
-            if s.contains(&m) {
-                count += 1;
-            }
-        }
-        println!("C: {:?} {:?}", m, count);
-        prod *= count;
-    }
-    println!("NS: {:?}", ns);
-    println!("OPT: {:?}", optionals);
-    println!("Set: {:?}", set);
-    println!("Prod: {:?}", prod);
-    let mut combos = vec![vec![0]];
-    combos
+    let combs = pv_comb(vec![(0, v)]);
+    combs
 }
 
-fn add_perms(ns: &Vec<i32>, set: &mut HashSet<Vec<i32>>, seed: &mut i32) {
-    let mut v = ns.to_vec();
-    println!("V: {:?}", v);
-    if v.len() == 1 {
-        set.insert(v.to_vec());
-    }
-    if v.len() == 2 {
-        set.insert(v.to_vec());
-        set.insert(v[0..1].to_vec());
-        set.insert(v[1..2].to_vec());
-    }
-    if v.len() == 3 {
-        set.insert(v.to_vec());
-        set.insert(v[0..2].to_vec());
-        set.insert(vec![v[0], v[2]]);
-        set.insert(v[1..3].to_vec());
-        set.insert(v[0..1].to_vec());
-        set.insert(v[1..2].to_vec());
-        set.insert(v[2..3].to_vec());
-    }
-}
-
-fn calc_possible_values(ns: &Vec<i32>) -> HashMap<i32, Vec<i32>> {
-    let mut map: HashMap<i32, Vec<i32>> = HashMap::new();
-    for i in 0..ns.len() - 1 {
-        let mut v = Vec::new();
-        for j in i + 1..ns.len() {
-            if !is_valid(ns[i], ns[j]) {
-                break;
+fn pv_comb(pvs: Vec<(i32, Vec<i32>)>) -> i32 {
+    pvs.iter()
+        .fold(|(n, ns)| {
+            if ns.is_empty() {
+                1
+            } else {
+                let combs = pv_comb(possible_values_for(*n, &ns));
+                println!("{:?} {:?} {:?}", n, ns[ns.len() - 1], combs.len());
+                let vs = combs
+                    .iter()
+                    .map(|c| {
+                        let mut v = c.to_vec();
+                        v.insert(0, *n);
+                        v
+                    })
+                    .collect();
+                vs
             }
-            v.push(ns[j])
-        }
-        map.insert(ns[i], v);
-    }
-    for (k, x) in map.iter().sorted_by_key(|x| x.1) {
-        println!("{:?},{:?}", k, x);
-    }
-    map
+        })
+        .collect()
 }
 
 fn possible_values_for(a: i32, ns: &Vec<i32>) -> Vec<(i32, Vec<i32>)> {
