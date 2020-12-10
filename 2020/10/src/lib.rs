@@ -1,15 +1,33 @@
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
     let mut ns = numbers();
     ns.sort();
-    let combs: Vec<Vec<i32>> = combinations(&ns.to_vec());
+    println!("{:?}", ns);
+    println!(
+        "{}",
+        2 * ns
+            .windows(2)
+            .collect::<Vec<_>>()
+            .split(|n| {
+                println!("SPLIT{:?} {:?} {:?}", n, n[1], n[0]);
+                n[1] - n[0] == 3
+            })
+            .map(|n| {
+                println!("Map {:?}", n);
+                match n.len() {
+                    4 => 7,
+                    3 => 4,
+                    2 => 2,
+                    _ => 1,
+                }
+            })
+            .product::<usize>()
+    );
 
-    println!("{:?} {:?}", combs.len(), combs.len());
     // let (ones, threes) = diffs(&ns);
     // println!("{:?} {:?} {:?}", ones, threes, ones * threes);
 
@@ -17,65 +35,6 @@ pub fn main() {
     // println!("{:?} {:?} {:?}", ns, i, v);
     // let (i, j, min, max) = find_first_sum(&ns, v);
     // println!("{:?} {:?} {:?} {:?} {:?}", i, j, min, max, min + max);
-}
-
-fn combinations(ns: &Vec<i32>) -> Vec<Vec<i32>> {
-    let high = ns[ns.len() - 1];
-    let mut v = ns.to_vec();
-    v.insert(0, 0);
-    v.push(high + 3);
-    let map = calc_possible_values(&v);
-    let mut optionals = ns.to_vec();
-    let mut set: HashSet<Vec<i32>> = HashSet::new();
-    println!("OPT: {:?}", optionals);
-    let mut seed = 12345;
-    for (k, _) in map.iter() {
-        let m = map[&k].to_vec();
-        add_perms(&m, &mut set, &mut seed);
-        seed += 1;
-        if m.len() > 1 {
-            optionals.retain(|n| *n != m[0]);
-        }
-    }
-    let mut prod: i32 = 1;
-    for m in optionals.iter() {
-        let mut count = 0;
-        for s in set.iter() {
-            if s.contains(&m) {
-                count += 1;
-            }
-        }
-        println!("C: {:?} {:?}", m, count);
-        prod *= count;
-    }
-    println!("NS: {:?}", ns);
-    println!("OPT: {:?}", optionals);
-    println!("Set: {:?}", set);
-    println!("Prod: {:?}", prod);
-    let mut combos = vec![vec![0]];
-    combos
-}
-
-fn add_perms(ns: &Vec<i32>, set: &mut HashSet<Vec<i32>>, seed: &mut i32) {
-    let mut v = ns.to_vec();
-    println!("V: {:?}", v);
-    if v.len() == 1 {
-        set.insert(v.to_vec());
-    }
-    if v.len() == 2 {
-        set.insert(v.to_vec());
-        set.insert(v[0..1].to_vec());
-        set.insert(v[1..2].to_vec());
-    }
-    if v.len() == 3 {
-        set.insert(v.to_vec());
-        set.insert(v[0..2].to_vec());
-        set.insert(vec![v[0], v[2]]);
-        set.insert(v[1..3].to_vec());
-        set.insert(v[0..1].to_vec());
-        set.insert(v[1..2].to_vec());
-        set.insert(v[2..3].to_vec());
-    }
 }
 
 fn calc_possible_values(ns: &Vec<i32>) -> HashMap<i32, Vec<i32>> {
@@ -170,14 +129,6 @@ fn read_lines() -> io::Result<io::Lines<io::BufReader<File>>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    #[ignore]
-    fn test_bin_part() {
-        let v = vec![1, 4, 5, 6, 7];
-        let pvs = combinations(&v);
-        println!("{:?}", pvs);
-    }
 
     #[test]
     #[ignore]
