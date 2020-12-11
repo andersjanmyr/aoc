@@ -69,84 +69,41 @@ fn adjacent(grid: &Vec<Vec<char>>, r: usize, c: usize, seat: char) -> i32 {
     count
 }
 
+fn get_coordinates(
+    r: i32,
+    c: i32,
+    rlim: i32,
+    clim: i32,
+    rdelta: i32,
+    cdelta: i32,
+) -> Vec<(usize, usize)> {
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = r as i32;
+    let mut j = c as i32;
+    while i != rlim as i32 && j != clim as i32 {
+        v.push((i as usize, j as usize));
+        i += rdelta;
+        j += cdelta;
+    }
+    v
+}
+
 fn adjacents(rlen: usize, clen: usize, r: usize, c: usize) -> Vec<Vec<(usize, usize)>> {
     let mut vs: Vec<Vec<(usize, usize)>> = Vec::new();
     let rmin: i32 = r as i32 - 1;
     let cmin: i32 = c as i32 - 1;
-    let rmax = r + 1;
-    let cmax = c + 1;
+    let rmax = r as i32 + 1;
+    let cmax = c as i32 + 1;
 
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmin;
-    let mut j = cmin;
-    while i >= 0 && j >= 0 {
-        v.push((i as usize, j as usize));
-        i -= 1;
-        j -= 1;
-    }
-    vs.push(v);
+    vs.push(get_coordinates(rmin, cmin, -1, -1, -1, -1));
+    vs.push(get_coordinates(rmin, c as i32, -1, -1, -1, 0));
+    vs.push(get_coordinates(rmin, cmax, -1, clen as i32, -1, 1));
+    vs.push(get_coordinates(r as i32, cmin, -1, -1, 0, -1));
+    vs.push(get_coordinates(r as i32, cmax, -1, clen as i32, 0, 1));
+    vs.push(get_coordinates(rmax, cmin, rlen as i32, -1, 1, -1));
+    vs.push(get_coordinates(rmax, c as i32, rlen as i32, -1, 1, 0));
+    vs.push(get_coordinates(rmax, cmax, rlen as i32, clen as i32, 1, 1));
 
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmin;
-    while i >= 0 {
-        v.push((i as usize, c));
-        i -= 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmin;
-    let mut j = cmax;
-    while i >= 0 && j < clen {
-        v.push((i as usize, j));
-        i -= 1;
-        j += 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut j = cmin;
-    while j >= 0 {
-        v.push((r, j as usize));
-        j -= 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut j = cmax;
-    while j < clen {
-        v.push((r, j));
-        j += 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmax;
-    let mut j = cmin;
-    while i < rlen && j >= 0 {
-        v.push((i, j as usize));
-        i += 1;
-        j -= 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmax;
-    while i < rlen {
-        v.push((i, c));
-        i += 1;
-    }
-    vs.push(v);
-
-    let mut v: Vec<(usize, usize)> = Vec::new();
-    let mut i = rmax;
-    let mut j = cmax;
-    while i < rlen && j < clen {
-        v.push((i, j));
-        i += 1;
-        j += 1;
-    }
-    vs.push(v);
     vs
 }
 
