@@ -40,7 +40,7 @@ fn simulate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut copy = grid.to_vec();
     for r in 0..grid.len() {
         for c in 0..grid[r].len() {
-            let adj = adjacent(grid, r, c, '#');
+            let adj = adjacent(grid, r, c);
             if grid[r][c] == 'L' && adj == 0 {
                 copy[r][c] = '#';
             }
@@ -52,7 +52,7 @@ fn simulate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     copy
 }
 
-fn adjacent(grid: &Vec<Vec<char>>, r: usize, c: usize, seat: char) -> i32 {
+fn adjacent(grid: &Vec<Vec<char>>, r: usize, c: usize) -> i32 {
     let mut count = 0;
     for line in adjacents(grid.len(), grid[0].len(), r, c) {
         for (i, j) in line {
