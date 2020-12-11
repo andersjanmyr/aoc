@@ -1,27 +1,99 @@
-use combinations::Combinations;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
 pub fn main() {
-    let ns = numbers();
+    let ls = strings();
+    let mut grid: Vec<Vec<char>> = ls.iter().map(|s| s.chars().collect()).collect();
+    print_grid(&grid);
 
-    let (v, i) = find(&ns, 25);
-    println!("{:?} {:?} {:?}", ns, i, v);
-    let (i, j, min, max) = find_first_sum(&ns, v);
-    println!("{:?} {:?} {:?} {:?} {:?}", i, j, min, max, min + max);
+    let mut next = simulate(&grid);
+    print_grid(&next);
+    while next != grid {
+        grid = next;
+        next = simulate(&grid);
+        print_grid(&next);
+    }
+    println!("{:?}", count(&grid));
 }
 
-fn find(ns: &Vec<i64>, l: usize) -> (i64, usize) {
-    for i in 0..(ns.len() - l) {
-        let sums: Vec<i64> = Combinations::new(ns[i..(i + l)].to_vec(), 2)
-            .map(|v| v[0] + v[1])
-            .collect();
-        let n = ns[i + l];
-        if !sums.contains(&n) {
-            return (n, i);
+fn print_grid(grid: &Vec<Vec<char>>) {
+    for r in grid {
+        let s: String = r.into_iter().collect();
+        println!("{:?}", s);
+    }
+    println!("");
+}
+
+fn count(grid: &Vec<Vec<char>>) -> usize {
+    let mut count = 0;
+    for r in 0..grid.len() {
+        for c in 0..grid[r].len() {
+            if grid[r][c] == '#' {
+                count += 1;
+            }
         }
     }
-    panic!("");
+    count
+}
+
+fn simulate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    let mut copy = grid.to_vec();
+    for r in 0..grid.len() {
+        for c in 0..grid[r].len() {
+            let adj = adjacent(grid, r, c, '#');
+            if grid[r][c] == 'L' && adj == 0 {
+                copy[r][c] = '#';
+            }
+            if grid[r][c] == '#' && adj >= 4 {
+                copy[r][c] = 'L';
+            }
+        }
+    }
+    copy
+}
+
+fn adjacent(grid: &Vec<Vec<char>>, r: usize, c: usize, seat: char) -> i32 {
+    let mut count = 0;
+    for (i, j) in adjacents(grid.len(), grid[0].len(), r, c) {
+        if grid[i][j] == seat {
+            count += 1;
+        }
+    }
+    count
+}
+
+fn adjacents(rlen: usize, clen: usize, r: usize, c: usize) -> Vec<(usize, usize)> {
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let rmin: i32 = r as i32 - 1;
+    let cmin: i32 = c as i32 - 1;
+    let rmax = r + 1;
+    let cmax = c + 1;
+    if rmin >= 0 && cmin >= 0 {
+        v.push((rmin as usize, cmin as usize));
+    }
+    if rmin >= 0 {
+        v.push((rmin as usize, c));
+    }
+    if rmin >= 0 && cmax < clen {
+        v.push((rmin as usize, cmax));
+    }
+    if cmin >= 0 {
+        v.push((r, cmin as usize));
+    }
+    if cmax < clen {
+        v.push((r, cmax));
+    }
+    if rmax < rlen && cmin >= 0 {
+        v.push((rmax, cmin as usize));
+    }
+    if rmax < rlen {
+        v.push((rmax, c));
+    }
+    if rmax < rlen && cmax < clen {
+        v.push((rmax, cmax));
+    }
+    // println!("{:?} {:?} {:?}", r, c, v);
+    v
 }
 
 fn find_first_sum(ns: &Vec<i64>, s: i64) -> (usize, usize, i64, i64) {
