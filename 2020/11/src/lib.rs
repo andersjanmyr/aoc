@@ -11,8 +11,8 @@ pub fn main() {
     while next != grid {
         grid = next;
         next = simulate(&grid);
-        print_grid(&next);
     }
+    print_grid(&next);
     println!("{:?}", count(&grid));
 }
 
@@ -44,7 +44,7 @@ fn simulate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
             if grid[r][c] == 'L' && adj == 0 {
                 copy[r][c] = '#';
             }
-            if grid[r][c] == '#' && adj >= 4 {
+            if grid[r][c] == '#' && adj >= 5 {
                 copy[r][c] = 'L';
             }
         }
@@ -54,46 +54,100 @@ fn simulate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
 
 fn adjacent(grid: &Vec<Vec<char>>, r: usize, c: usize, seat: char) -> i32 {
     let mut count = 0;
-    for (i, j) in adjacents(grid.len(), grid[0].len(), r, c) {
-        if grid[i][j] == seat {
-            count += 1;
+    for line in adjacents(grid.len(), grid[0].len(), r, c) {
+        for (i, j) in line {
+            if grid[i][j] == '#' {
+                count += 1;
+                break;
+            }
+            if grid[i][j] == 'L' {
+                break;
+            }
         }
     }
+    // println!("{:?} {:?} {:?}", r, c, vs);
     count
 }
 
-fn adjacents(rlen: usize, clen: usize, r: usize, c: usize) -> Vec<(usize, usize)> {
-    let mut v: Vec<(usize, usize)> = Vec::new();
+fn adjacents(rlen: usize, clen: usize, r: usize, c: usize) -> Vec<Vec<(usize, usize)>> {
+    let mut vs: Vec<Vec<(usize, usize)>> = Vec::new();
     let rmin: i32 = r as i32 - 1;
     let cmin: i32 = c as i32 - 1;
     let rmax = r + 1;
     let cmax = c + 1;
-    if rmin >= 0 && cmin >= 0 {
-        v.push((rmin as usize, cmin as usize));
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmin;
+    let mut j = cmin;
+    while i >= 0 && j >= 0 {
+        v.push((i as usize, j as usize));
+        i -= 1;
+        j -= 1;
     }
-    if rmin >= 0 {
-        v.push((rmin as usize, c));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmin;
+    while i >= 0 {
+        v.push((i as usize, c));
+        i -= 1;
     }
-    if rmin >= 0 && cmax < clen {
-        v.push((rmin as usize, cmax));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmin;
+    let mut j = cmax;
+    while i >= 0 && j < clen {
+        v.push((i as usize, j));
+        i -= 1;
+        j += 1;
     }
-    if cmin >= 0 {
-        v.push((r, cmin as usize));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut j = cmin;
+    while j >= 0 {
+        v.push((r, j as usize));
+        j -= 1;
     }
-    if cmax < clen {
-        v.push((r, cmax));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut j = cmax;
+    while j < clen {
+        v.push((r, j));
+        j += 1;
     }
-    if rmax < rlen && cmin >= 0 {
-        v.push((rmax, cmin as usize));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmax;
+    let mut j = cmin;
+    while i < rlen && j >= 0 {
+        v.push((i, j as usize));
+        i += 1;
+        j -= 1;
     }
-    if rmax < rlen {
-        v.push((rmax, c));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmax;
+    while i < rlen {
+        v.push((i, c));
+        i += 1;
     }
-    if rmax < rlen && cmax < clen {
-        v.push((rmax, cmax));
+    vs.push(v);
+
+    let mut v: Vec<(usize, usize)> = Vec::new();
+    let mut i = rmax;
+    let mut j = cmax;
+    while i < rlen && j < clen {
+        v.push((i, j));
+        i += 1;
+        j += 1;
     }
-    // println!("{:?} {:?} {:?}", r, c, v);
-    v
+    vs.push(v);
+    vs
 }
 
 fn find_first_sum(ns: &Vec<i64>, s: i64) -> (usize, usize, i64, i64) {
