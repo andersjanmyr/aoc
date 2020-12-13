@@ -1,10 +1,6 @@
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-fn inv_mod(x: i64, p: i64) -> i64 {
-    // p must be prime
-    (0..p - 2).fold(1, |o, _| (o * x) % p)
-}
 pub fn main() {
     let ls = strings();
     let buses: Vec<(i64, i64)> = ls[1]
@@ -13,15 +9,17 @@ pub fn main() {
         .filter_map(|(i, l)| l.parse().ok().map(|b| (i as i64, b)))
         .collect();
 
-    let prod: i64 = buses.iter().map(|(_, b)| b).product();
+    let mut min_value: i64 = 0;
+    let mut running_product: i64 = 1;
 
-    let result2 = buses
-        .iter()
-        .map(|&(a, b)| -a * (prod / b) * inv_mod(prod / b, b))
-        .sum::<i64>()
-        .rem_euclid(prod);
-
-    println!("{:?}", result2);
+    for (i, b) in buses {
+        println!("{:?} {:?} {:?} {:?}", min_value, i, b, running_product);
+        while (min_value + i) % b != 0 {
+            min_value += running_product
+        }
+        running_product *= b;
+    }
+    println!("{:?}", min_value);
 }
 
 fn groups() -> Vec<Vec<String>> {
