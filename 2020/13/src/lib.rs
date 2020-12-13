@@ -1,86 +1,27 @@
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-#[derive(Debug)]
-struct Move {
-    name: char,
-    count: i32,
+fn inv_mod(x: i64, p: i64) -> i64 {
+    // p must be prime
+    (0..p - 2).fold(1, |o, _| (o * x) % p)
 }
-
 pub fn main() {
     let ls = strings();
-    let moves = get_moves(&ls);
-    let (x, y) = simulate((10, 1), &moves);
-    let dist = x.abs() + y.abs();
-    println!("{:?}", dist);
-}
+    let buses: Vec<(i64, i64)> = ls[1]
+        .split(',')
+        .enumerate()
+        .filter_map(|(i, l)| l.parse().ok().map(|b| (i as i64, b)))
+        .collect();
 
-fn get_moves(lines: &Vec<String>) -> Vec<Move> {
-    lines
+    let prod: i64 = buses.iter().map(|(_, b)| b).product();
+
+    let result2 = buses
         .iter()
-        .map(|l| {
-            let cs: Vec<char> = l.chars().collect();
-            let s: String = cs[1..].into_iter().collect();
-            Move {
-                name: cs[0],
-                count: s.parse::<i32>().unwrap(),
-            }
-        })
-        .collect()
-}
+        .map(|&(a, b)| -a * (prod / b) * inv_mod(prod / b, b))
+        .sum::<i64>()
+        .rem_euclid(prod);
 
-fn simulate(waypoint: (i32, i32), moves: &Vec<Move>) -> (i32, i32) {
-    let mut x = 0;
-    let mut y = 0;
-    let mut wx = waypoint.0;
-    let mut wy = waypoint.1;
-    for m in moves {
-        match m.name {
-            'N' => wy += m.count,
-            'S' => wy -= m.count,
-            'E' => wx += m.count,
-            'W' => wx -= m.count,
-            'R' => {
-                let p = turn_right(m.count, wx, wy);
-                wx = p.0;
-                wy = p.1;
-            }
-            'L' => {
-                let p = turn_left(m.count, wx, wy);
-                wx = p.0;
-                wy = p.1;
-            }
-            'F' => {
-                let dx = m.count * wx;
-                let dy = m.count * wy;
-                x += dx;
-                y += dy;
-            }
-            _ => panic!(""),
-        }
-        println!("{:?} {:?} {:?} {:?}", x, y, wx, wy);
-    }
-    (x, y)
-}
-
-fn turn_right(deg: i32, wx: i32, wy: i32) -> (i32, i32) {
-    match deg {
-        0 => (wx, wy),
-        90 => (wy, -wx),
-        180 => (-wx, -wy),
-        270 => (-wy, wx),
-        _ => panic!(""),
-    }
-}
-
-fn turn_left(deg: i32, wx: i32, wy: i32) -> (i32, i32) {
-    match deg {
-        0 => (wx, wy),
-        90 => (-wy, wx),
-        180 => (-wx, -wy),
-        270 => (wy, -wx),
-        _ => panic!(""),
-    }
+    println!("{:?}", result2);
 }
 
 fn groups() -> Vec<Vec<String>> {
@@ -99,16 +40,16 @@ fn groups() -> Vec<Vec<String>> {
     gs
 }
 
-fn numbers() -> Vec<i32> {
+fn numbers() -> Vec<i64> {
     let lines = strings();
-    lines.iter().map(|s| s.parse::<i32>().unwrap()).collect()
+    lines.iter().map(|s| s.parse::<i64>().unwrap()).collect()
 }
 
-fn num_matrix() -> Vec<Vec<i32>> {
+fn num_matrix() -> Vec<Vec<i64>> {
     let lines = matrix();
     lines
         .iter()
-        .map(|ss| ss.iter().map(|s| s.parse::<i32>().unwrap()).collect())
+        .map(|ss| ss.iter().map(|s| s.parse::<i64>().unwrap()).collect())
         .collect()
 }
 
