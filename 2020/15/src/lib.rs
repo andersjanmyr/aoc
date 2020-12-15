@@ -2,37 +2,70 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
+pub struct Memory {
+    ns: Vec<usize>,
+}
+
+impl Memory {
+    fn new(ns: Vec<usize>) -> Self {
+        Self { ns }
+    }
+}
+
+pub struct MemoryIntoIterator {
+    memory: Memory,
+    index: usize,
+    last_spoken: usize,
+    map: HashMap<usize, usize>,
+}
+
+impl IntoIterator for Memory {
+    type Item = usize;
+    type IntoIter = MemoryIntoIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let map: HashMap<usize, usize> = self.ns[0..self.ns.len() - 1]
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (*n, i + 1))
+            .collect();
+        let last_spoken = *self.ns.last().unwrap();
+        MemoryIntoIterator {
+            memory: self,
+            index: 0,
+            map,
+            last_spoken,
+        }
+    }
+}
+
+impl Iterator for MemoryIntoIterator {
+    type Item = usize;
+    fn next(&mut self) -> Option<usize> {
+        if self.index < self.memory.ns.len() {
+            let result = self.memory.ns[self.index];
+            self.index += 1;
+            return Some(result);
+        }
+        self.last_spoken = self.index
+            - self
+                .map
+                .insert(self.last_spoken, self.index)
+                .unwrap_or(self.index);
+        self.index += 1;
+        // println!("{:?} {:?}", self.turn, self.last_spoken);
+        Some(self.last_spoken)
+    }
+}
+
 pub fn main() {
     let ns: Vec<usize> = strings()[0]
         .split(",")
-        .map(|s| s.parse::<usize>().unwrap())
+        .map(|s| s.parse().unwrap())
         .collect();
-    let mut is: HashMap<usize, usize> = ns[0..ns.len() - 1]
-        .iter()
-        .enumerate()
-        .map(|(i, n)| (*n, i + 1))
-        .collect();
-    let mut to_insert = (*ns.last().unwrap(), ns.len());
-    let mut next_to_insert: (usize, usize);
-    for i in ns.len() + 1..30000001 {
-        // for i in ns.len() + 1..2021 {
-        let index = is.get(&to_insert.0);
-        match index {
-            None => {
-                next_to_insert = (0, i);
-            }
-            Some(index) => {
-                let n = i - index - 1;
-                next_to_insert = (n, i);
-            }
-        }
-        if i % 100000 == 0 {
-            println!("{:?} {:?}", i, to_insert);
-        }
-        is.insert(to_insert.0, to_insert.1);
-        to_insert = next_to_insert;
-    }
-    println!("{:?}", to_insert);
+    let mem = Memory::new(ns);
+    let result = mem.into_iter().take(30000000).last();
+    println!("{:?}", result);
 }
 
 fn groups() -> Vec<Vec<String>> {
