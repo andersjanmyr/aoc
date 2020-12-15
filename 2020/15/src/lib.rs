@@ -7,25 +7,32 @@ pub fn main() {
         .split(",")
         .map(|s| s.parse::<usize>().unwrap())
         .collect();
-    let mut is: Vec<(usize, usize)> = ns.iter().enumerate().map(|(i, n)| (*n, i + 1)).collect();
-    is.reverse();
-    // for i in is.len() + 1..30000001 {
-    let mut last = is.first().unwrap().0;
-    for i in is.len() + 1..2021 {
-        let index = is[1..].iter().find(|(n, _)| *n == last);
+    let mut is: HashMap<usize, usize> = ns[0..ns.len() - 1]
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (*n, i + 1))
+        .collect();
+    let mut to_insert = (*ns.last().unwrap(), ns.len());
+    let mut next_to_insert: (usize, usize);
+    for i in ns.len() + 1..30000001 {
+        // for i in ns.len() + 1..2021 {
+        let index = is.get(&to_insert.0);
         match index {
             None => {
-                last = 0;
-                is.insert(0, (last, i));
+                next_to_insert = (0, i);
             }
-            Some((_, index)) => {
-                last = i - index - 1;
-                is.insert(0, (last, i));
+            Some(index) => {
+                let n = i - index - 1;
+                next_to_insert = (n, i);
             }
         }
+        if i % 100000 == 0 {
+            println!("{:?} {:?}", i, to_insert);
+        }
+        is.insert(to_insert.0, to_insert.1);
+        to_insert = next_to_insert;
     }
-    println!("{:?}", is);
-    println!("{:?}", is.last());
+    println!("{:?}", to_insert);
 }
 
 fn groups() -> Vec<Vec<String>> {
