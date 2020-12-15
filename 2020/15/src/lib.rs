@@ -1,95 +1,31 @@
-use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-#[derive(Debug)]
-enum Rule {
-    Mask(String),
-    Mem { pos: usize, val: usize },
-}
-use Rule::*;
-
 pub fn main() {
-    let ls = strings();
-    let rules = parse_rules(ls);
-    println!("{:?}", rules);
-    let result = simulate(rules);
-    println!("{:?}", result);
-}
-
-fn simulate(rules: Vec<Rule>) -> usize {
-    let mut mem: HashMap<usize, usize> = HashMap::new();
-    let mut mask: String = "".to_string();
-    for rule in rules {
-        match rule {
-            Mask(m) => mask = m,
-            Mem { pos, val } => {
-                let ps = mask_value(pos, mask.to_string());
-                for p in ps {
-                    mem.insert(p, val);
-                }
-            }
-        }
-    }
-    mem.values().sum()
-}
-
-fn mask_value(pos: usize, mask: String) -> Vec<usize> {
-    let mut bs: Vec<_> = format!("{:036b}", pos).chars().collect();
-    let cs = mask.chars();
-    for (i, c) in cs.enumerate() {
-        match c {
-            '0' => (),
-            '1' => bs[i] = '1',
-            _ => bs[i] = 'X',
-        }
-    }
-    let mut v = vec![bs];
-    expand_pos(&mut v);
-    v.iter()
-        .map(|cs| {
-            let s: String = cs.into_iter().collect();
-            usize::from_str_radix(&s, 2).unwrap()
-        })
-        .collect()
-}
-
-fn expand_pos(v: &mut Vec<Vec<char>>) {
-    let mut old_len = 0;
-    while v.len() != old_len {
-        old_len = v.len();
-        let cs = v.pop().unwrap();
-        let i = cs.iter().position(|&c| c == 'X');
-        match i {
-            Some(i) => {
-                let mut c0 = cs.clone();
-                c0[i] = '0';
-                v.insert(0, c0);
-                let mut c1 = cs.clone();
-                c1[i] = '1';
-                v.insert(0, c1);
-            }
-            None => v.push(cs),
-        }
-    }
-}
-
-fn parse_rules(ls: Vec<String>) -> Vec<Rule> {
-    let rmem = Regex::new(r"^mem\[(\d+)\] = (\d+)$").unwrap();
-    let rmask = Regex::new(r"^mask = (.+)$").unwrap();
-    ls.iter()
-        .map(|l| match rmask.captures(l) {
-            Some(cap) => Mask(cap[1].to_string()),
+    let ns: Vec<usize> = strings()[0]
+        .split(",")
+        .map(|s| s.parse::<usize>().unwrap())
+        .collect();
+    let mut is: Vec<(usize, usize)> = ns.iter().enumerate().map(|(i, n)| (*n, i + 1)).collect();
+    is.reverse();
+    // for i in is.len() + 1..30000001 {
+    let mut last = is.first().unwrap().0;
+    for i in is.len() + 1..2021 {
+        let index = is[1..].iter().find(|(n, _)| *n == last);
+        match index {
             None => {
-                let cap = rmem.captures(l).unwrap();
-                Mem {
-                    pos: cap[1].parse().unwrap(),
-                    val: cap[2].parse().unwrap(),
-                }
+                last = 0;
+                is.insert(0, (last, i));
             }
-        })
-        .collect()
+            Some((_, index)) => {
+                last = i - index - 1;
+                is.insert(0, (last, i));
+            }
+        }
+    }
+    println!("{:?}", is);
+    println!("{:?}", is.last());
 }
 
 fn groups() -> Vec<Vec<String>> {
@@ -108,9 +44,9 @@ fn groups() -> Vec<Vec<String>> {
     gs
 }
 
-fn numbers() -> Vec<i32> {
+fn numbers() -> Vec<usize> {
     let lines = strings();
-    lines.iter().map(|s| s.parse::<i32>().unwrap()).collect()
+    lines.iter().map(|s| s.parse::<usize>().unwrap()).collect()
 }
 
 fn num_matrix() -> Vec<Vec<i32>> {
