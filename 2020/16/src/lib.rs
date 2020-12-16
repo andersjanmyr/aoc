@@ -5,8 +5,8 @@ use std::io::{self, prelude::*};
 #[derive(Debug)]
 struct Rule {
     name: String,
-    e1: (i32, i32),
-    e2: (i32, i32),
+    e1: (usize, usize),
+    e2: (usize, usize),
 }
 
 impl Rule {
@@ -18,59 +18,47 @@ impl Rule {
         }
     }
 
-    fn parse_expr(e: String) -> (i32, i32) {
-        let is: Vec<i32> = e.split("-").map(|s| s.parse::<i32>().unwrap()).collect();
+    fn parse_expr(e: String) -> (usize, usize) {
+        let is: Vec<usize> = e.split("-").map(|s| s.parse::<usize>().unwrap()).collect();
         (is[0], is[1])
     }
 
-    fn satisfies_rule(&self, n: i32) -> bool {
+    fn satisfies_rule(&self, n: usize) -> bool {
         (n >= self.e1.0 && n <= self.e1.1) || (n >= self.e2.0 && n <= self.e2.1)
     }
 }
 
 pub fn main() {
     let gs = groups();
-    // let buses: Vec<(i32, i32)> = ls[1]
-    //     .split(',')
-    //     .enumerate()
-    //     .filter_map(|(i, l)| l.parse().ok().map(|b| (i as i32, b)))
-    //     .collect();
     let result = solve(&gs);
     println!("{:?}", result);
 }
 
 fn solve(gs: &Vec<Vec<String>>) -> usize {
     let rules = parse_rules(&gs[0]);
-    println!("{:?}", rules);
-    let ticket = parse_ticket(&gs[1]);
-
+    let my_ticket = parse_ticket(gs[1][1].to_string());
     let tickets = parse_tickets(&gs[2]);
-    let valid = valid_tickets(&rules, &tickets);
+    let valid = &valid_tickets(&rules, &tickets);
 
-    let ts = &valid;
-    let iss: Vec<_> = (0..ts[0].len())
-        .map(|i| ts.iter().map(|t| t[i]).collect::<Vec<i32>>())
+    let iss: Vec<_> = (0..valid[0].len())
+        .map(|i| valid.iter().map(|t| t[i]).collect::<Vec<usize>>())
         .collect();
-    // println!("iss: {:?}", iss);
 
     let mut map: HashMap<String, Vec<usize>> = HashMap::new();
     for r in rules {
         for (i, is) in iss.iter().enumerate() {
             if is.iter().all(|i| r.satisfies_rule(*i)) {
-                println!("i: {:?} {:?}", i, r.name);
                 let v = map.entry(r.name.to_string()).or_insert(vec![i]);
                 v.push(i);
                 v.dedup();
             }
         }
     }
-    println!("map: {:?}", map);
     let mut entries: Vec<(&str, Vec<usize>)> = Vec::new();
     for (k, v) in &map {
         entries.push((k, v.clone()));
     }
     entries.sort_by(|(_, a), (_, b)| a.len().partial_cmp(&b.len()).unwrap());
-    println!("entries: {:?}", entries);
     for i in 0..entries.len() {
         let a = entries[i].1[0];
         for j in i + 1..entries.len() {
@@ -78,17 +66,14 @@ fn solve(gs: &Vec<Vec<String>>) -> usize {
             entries[j].1 = b;
         }
     }
-    println!("entries: {:?}", entries);
     let deps: Vec<_> = entries
         .iter()
         .filter(|(s, _)| s.starts_with("departure"))
         .collect();
-    println!("deps: {:?}", deps);
-    println!("ticket: {:?}", ticket);
-    deps.iter().fold(1, |a, (_, v)| a * ticket[v[0]])
+    deps.iter().fold(1, |a, (_, v)| a * my_ticket[v[0]])
 }
 
-fn valid_tickets(rules: &Vec<Rule>, tickets: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+fn valid_tickets(rules: &Vec<Rule>, tickets: &Vec<Vec<usize>>) -> Vec<Vec<usize>> {
     tickets
         .iter()
         .filter(|&t| valid_ticket(rules, t))
@@ -96,7 +81,7 @@ fn valid_tickets(rules: &Vec<Rule>, tickets: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
         .collect()
 }
 
-fn valid_ticket(rules: &Vec<Rule>, ticket: &Vec<i32>) -> bool {
+fn valid_ticket(rules: &Vec<Rule>, ticket: &Vec<usize>) -> bool {
     ticket
         .iter()
         .all(|n| !rules.iter().all(|r| !r.satisfies_rule(*n)))
@@ -115,15 +100,15 @@ fn parse_rule(s: &str) -> Rule {
     Rule::new(name, expr1, expr2)
 }
 
-fn parse_tickets(ss: &Vec<String>) -> Vec<Vec<i32>> {
+fn parse_tickets(ss: &Vec<String>) -> Vec<Vec<usize>> {
     ss[1..]
         .iter()
-        .map(|s| s.split(",").map(|s| s.parse::<i32>().unwrap()).collect())
+        .map(|s| parse_ticket(s.to_string()))
         .collect()
 }
 
-fn parse_ticket(ss: &Vec<String>) -> Vec<usize> {
-    ss[1].split(",").map(|s| s.parse().unwrap()).collect()
+fn parse_ticket(s: String) -> Vec<usize> {
+    s.split(",").map(|s| s.parse().unwrap()).collect()
 }
 
 fn groups() -> Vec<Vec<String>> {
