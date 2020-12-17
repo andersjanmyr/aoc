@@ -2,129 +2,119 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
-#[derive(Debug)]
-struct Rule {
-    name: String,
-    e1: (usize, usize),
-    e2: (usize, usize),
-}
-
-impl Rule {
-    fn new(name: String, expr1: String, expr2: String) -> Self {
-        Rule {
-            name,
-            e1: Self::parse_expr(expr1),
-            e2: Self::parse_expr(expr2),
-        }
-    }
-
-    fn parse_expr(e: String) -> (usize, usize) {
-        let is: Vec<usize> = e.split("-").map(|s| s.parse::<usize>().unwrap()).collect();
-        (is[0], is[1])
-    }
-
-    fn satisfies_rule(&self, n: usize) -> bool {
-        (n >= self.e1.0 && n <= self.e1.1) || (n >= self.e2.0 && n <= self.e2.1)
-    }
-}
-
 pub fn main() {
-    let gs = groups();
-    let result = solve(&gs);
-    println!("{:?}", result);
-}
-
-fn solve(gs: &Vec<Vec<String>>) -> usize {
-    let rules = parse_rules(&gs[0]);
-    let my_ticket = parse_ticket(gs[1][1].to_string());
-    let tickets = parse_tickets(&gs[2]);
-    let valid = &valid_tickets(&rules, &tickets);
-
-    let iss: Vec<_> = (0..valid[0].len())
-        .map(|i| valid.iter().map(|t| t[i]).collect::<Vec<usize>>())
-        .collect();
-
-    let mut map: HashMap<String, Vec<usize>> = HashMap::new();
-    for r in rules {
-        for (i, is) in iss.iter().enumerate() {
-            if is.iter().all(|i| r.satisfies_rule(*i)) {
-                let v = map.entry(r.name.to_string()).or_insert(vec![i]);
-                v.push(i);
-                v.dedup();
+    let mut gen: HashMap<(i32, i32, i32, i32), bool> = HashMap::new();
+    let ss = strings();
+    for (x, s) in ss.iter().enumerate() {
+        for (y, c) in s.chars().enumerate() {
+            if c == '#' {
+                gen.insert((x as i32, y as i32, 0, 0), true);
             }
         }
     }
-    let mut entries: Vec<(&str, Vec<usize>)> = Vec::new();
-    for (k, v) in &map {
-        entries.push((k, v.clone()));
+    println!("{:?}", gen);
+    for i in 0..6 {
+        gen = next(&gen);
     }
-    entries.sort_by(|(_, a), (_, b)| a.len().partial_cmp(&b.len()).unwrap());
-    for i in 0..entries.len() {
-        let a = entries[i].1[0];
-        for j in i + 1..entries.len() {
-            let b = entries[j].1.iter().filter(|&n| n != &a).cloned().collect();
-            entries[j].1 = b;
+    println!("{:?}", gen.len());
+}
+
+fn next(gen: &HashMap<(i32, i32, i32, i32), bool>) -> HashMap<(i32, i32, i32, i32), bool> {
+    let mut next: HashMap<(i32, i32, i32, i32), bool> = HashMap::new();
+    let ((xmin, xmax), (ymin, ymax), (zmin, zmax), (wmin, wmax)) = limits(gen);
+    for x in xmin..=xmax {
+        for y in ymin..=ymax {
+            for z in zmin..=zmax {
+                for w in wmin..=wmax {
+                    let p = (x, y, z, w);
+                    let n = neighbors(p)
+                        .iter()
+                        .filter(|p| gen.contains_key(p))
+                        .collect::<Vec<_>>()
+                        .len();
+                    if n == 3 {
+                        next.insert(p, true);
+                    }
+                    if n == 2 {
+                        if let Some(_) = gen.get(&p) {
+                            next.insert(p, true);
+                        }
+                    }
+                }
+            }
         }
     }
-    let deps: Vec<_> = entries
-        .iter()
-        .filter(|(s, _)| s.starts_with("departure"))
-        .collect();
-    deps.iter().fold(1, |a, (_, v)| a * my_ticket[v[0]])
+    next
 }
 
-fn valid_tickets(rules: &Vec<Rule>, tickets: &Vec<Vec<usize>>) -> Vec<Vec<usize>> {
-    tickets
-        .iter()
-        .filter(|&t| valid_ticket(rules, t))
-        .cloned()
-        .collect()
-}
-
-fn valid_ticket(rules: &Vec<Rule>, ticket: &Vec<usize>) -> bool {
-    ticket
-        .iter()
-        .all(|n| !rules.iter().all(|r| !r.satisfies_rule(*n)))
-}
-
-fn parse_rules(ss: &Vec<String>) -> Vec<Rule> {
-    ss.iter().map(|l| parse_rule(&l)).collect()
-}
-
-fn parse_rule(s: &str) -> Rule {
-    let parts: Vec<&str> = s.split(":").collect();
-    let name = parts[0].to_string();
-    let parts: Vec<&str> = parts[1].split(" ").collect();
-    let expr1 = parts[1].to_string();
-    let expr2 = parts[3].to_string();
-    Rule::new(name, expr1, expr2)
-}
-
-fn parse_tickets(ss: &Vec<String>) -> Vec<Vec<usize>> {
-    ss[1..]
-        .iter()
-        .map(|s| parse_ticket(s.to_string()))
-        .collect()
-}
-
-fn parse_ticket(s: String) -> Vec<usize> {
-    s.split(",").map(|s| s.parse().unwrap()).collect()
-}
-
-fn groups() -> Vec<Vec<String>> {
-    let mut gs = Vec::new();
-    let ls = strings();
-    let mut group: Vec<String> = Vec::new();
-    for l in ls {
-        if l == "" {
-            gs.push(group);
-            group = Vec::new();
-        } else {
-            group.push(l);
+fn limits(
+    gen: &HashMap<(i32, i32, i32, i32), bool>,
+) -> ((i32, i32), (i32, i32), (i32, i32), (i32, i32)) {
+    let mut xmin = i32::MAX;
+    let mut xmax = i32::MIN;
+    let mut ymin = i32::MAX;
+    let mut ymax = i32::MIN;
+    let mut zmin = i32::MAX;
+    let mut zmax = i32::MIN;
+    let mut wmin = i32::MAX;
+    let mut wmax = i32::MIN;
+    for (&k, _) in gen {
+        let (x, y, z, w) = k;
+        if x > xmax {
+            xmax = x;
+        }
+        if x < xmin {
+            xmin = x;
+        }
+        if y > ymax {
+            ymax = y;
+        }
+        if y < ymin {
+            ymin = y;
+        }
+        if z > zmax {
+            zmax = z;
+        }
+        if z < zmin {
+            zmin = z;
+        }
+        if w > wmax {
+            wmax = w;
+        }
+        if w < wmin {
+            wmin = w;
         }
     }
-    gs.push(group);
-    gs
+    (
+        (xmin - 1, xmax + 1),
+        (ymin - 1, ymax + 1),
+        (zmin - 1, zmax + 1),
+        (wmin - 1, wmax + 1),
+    )
+}
+
+fn neighbors(p: (i32, i32, i32, i32)) -> Vec<(i32, i32, i32, i32)> {
+    let (x, y, z, w) = p;
+    let mut ns = Vec::new();
+    for i in x - 1..=x + 1 {
+        for j in y - 1..=y + 1 {
+            for k in z - 1..=z + 1 {
+                for l in w - 1..=w + 1 {
+                    if (i, j, k, l) != p {
+                        ns.push((i, j, k, l));
+                    }
+                }
+            }
+        }
+    }
+    // let ns: Vec<Vec<_>> = (x - 1..=x + 1)
+    //     .map(|x| {
+    //         (y - 1..=y + 1)
+    //             .flat_map(|y| (z - 1..=z + 1).map(|z| (x, y, z)).collect())
+    //             .collect()
+    //     })
+    //     .collect();
+    ns
 }
 
 fn numbers() -> Vec<i32> {
