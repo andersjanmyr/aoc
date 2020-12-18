@@ -1,132 +1,109 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*};
 
+#[derive(Clone, Debug)]
+enum Node {
+    Num(i64),
+    Op(char),
+    Expr(Vec<Node>),
+}
+
+use Node::*;
+
 pub fn main() {
-    let mut gen: HashMap<(i32, i32, i32, i32), bool> = HashMap::new();
     let ss = strings();
-    for (x, s) in ss.iter().enumerate() {
-        for (y, c) in s.chars().enumerate() {
-            if c == '#' {
-                gen.insert((x as i32, y as i32, 0, 0), true);
-            }
-        }
-    }
-    println!("{:?}", gen);
-    for i in 0..6 {
-        gen = next(&gen);
-    }
-    println!("{:?}", gen.len());
+    let ress: Vec<_> = ss.iter().map(|s| solve(s)).collect();
+    println!("RESULT: {:?} {:?}", ress, ress.iter().sum::<i64>());
 }
 
-fn next(gen: &HashMap<(i32, i32, i32, i32), bool>) -> HashMap<(i32, i32, i32, i32), bool> {
-    let mut next: HashMap<(i32, i32, i32, i32), bool> = HashMap::new();
-    let ((xmin, xmax), (ymin, ymax), (zmin, zmax), (wmin, wmax)) = limits(gen);
-    for x in xmin..=xmax {
-        for y in ymin..=ymax {
-            for z in zmin..=zmax {
-                for w in wmin..=wmax {
-                    let p = (x, y, z, w);
-                    let n = neighbors(p)
-                        .iter()
-                        .filter(|p| gen.contains_key(p))
-                        .collect::<Vec<_>>()
-                        .len();
-                    if n == 3 {
-                        next.insert(p, true);
-                    }
-                    if n == 2 {
-                        if let Some(_) = gen.get(&p) {
-                            next.insert(p, true);
-                        }
-                    }
+fn solve(s: &str) -> i64 {
+    println!("{:?}", s);
+    let tokens = tokenize(s);
+    println!("{:?}", tokens);
+    let tree = parse(&tokens);
+    println!("{:?}", tree);
+    eval(&tree)
+}
+
+fn eval(n: &Node) -> i64 {
+    match n {
+        Num(i) => *i,
+        Expr(ns) => eval_list(&ns),
+        _ => unimplemented!(),
+    }
+}
+
+fn eval_list(ns: &Vec<Node>) -> i64 {
+    let mut i = 1;
+    let mut a = eval(&ns[0]);
+    while i < ns.len() {
+        let b = eval(&ns[i + 1]);
+        if let Op(o) = ns[i] {
+            match o {
+                '+' => a += b,
+                '*' => {
+                    a *= eval_list(&ns[i + 1..].to_vec());
+                    i = ns.len();
                 }
+                _ => unimplemented!(),
             }
         }
+        i += 2;
     }
-    next
+    a
 }
 
-fn limits(
-    gen: &HashMap<(i32, i32, i32, i32), bool>,
-) -> ((i32, i32), (i32, i32), (i32, i32), (i32, i32)) {
-    let mut xmin = i32::MAX;
-    let mut xmax = i32::MIN;
-    let mut ymin = i32::MAX;
-    let mut ymax = i32::MIN;
-    let mut zmin = i32::MAX;
-    let mut zmax = i32::MIN;
-    let mut wmin = i32::MAX;
-    let mut wmax = i32::MIN;
-    for (&k, _) in gen {
-        let (x, y, z, w) = k;
-        if x > xmax {
-            xmax = x;
-        }
-        if x < xmin {
-            xmin = x;
-        }
-        if y > ymax {
-            ymax = y;
-        }
-        if y < ymin {
-            ymin = y;
-        }
-        if z > zmax {
-            zmax = z;
-        }
-        if z < zmin {
-            zmin = z;
-        }
-        if w > wmax {
-            wmax = w;
-        }
-        if w < wmin {
-            wmin = w;
-        }
+fn parse(chars: &Vec<char>) -> Node {
+    if chars.len() == 1 {
+        return parse_char(chars[0]);
     }
-    (
-        (xmin - 1, xmax + 1),
-        (ymin - 1, ymax + 1),
-        (zmin - 1, zmax + 1),
-        (wmin - 1, wmax + 1),
-    )
-}
-
-fn neighbors(p: (i32, i32, i32, i32)) -> Vec<(i32, i32, i32, i32)> {
-    let (x, y, z, w) = p;
-    let mut ns = Vec::new();
-    for i in x - 1..=x + 1 {
-        for j in y - 1..=y + 1 {
-            for k in z - 1..=z + 1 {
-                for l in w - 1..=w + 1 {
-                    if (i, j, k, l) != p {
-                        ns.push((i, j, k, l));
-                    }
+    let mut i = 0;
+    let mut ns: Vec<Node> = Vec::new();
+    while i < chars.len() {
+        if chars[i] != '(' {
+            ns.push(parse_char(chars[i]));
+        } else {
+            i += 1;
+            let s = i;
+            let mut pc = 0;
+            while chars[i] != ')' || pc > 0 {
+                if chars[i] == '(' {
+                    pc += 1
                 }
+                if chars[i] == ')' {
+                    pc -= 1
+                }
+                i += 1;
             }
+            let v = &chars[s..i].to_vec();
+            ns.push(parse(v));
         }
+        i += 1;
     }
-    // let ns: Vec<Vec<_>> = (x - 1..=x + 1)
-    //     .map(|x| {
-    //         (y - 1..=y + 1)
-    //             .flat_map(|y| (z - 1..=z + 1).map(|z| (x, y, z)).collect())
-    //             .collect()
-    //     })
-    //     .collect();
-    ns
+    Expr(ns)
 }
 
-fn numbers() -> Vec<i32> {
+fn parse_char(c: char) -> Node {
+    match c.to_digit(10) {
+        Some(n) => Num(n as i64),
+        None => Op(c),
+    }
+}
+
+fn tokenize(s: &str) -> Vec<char> {
+    s.chars().filter(|&c| c != ' ').collect()
+}
+
+fn numbers() -> Vec<i64> {
     let lines = strings();
-    lines.iter().map(|s| s.parse::<i32>().unwrap()).collect()
+    lines.iter().map(|s| s.parse::<i64>().unwrap()).collect()
 }
 
-fn num_matrix() -> Vec<Vec<i32>> {
+fn num_matrix() -> Vec<Vec<i64>> {
     let lines = matrix();
     lines
         .iter()
-        .map(|ss| ss.iter().map(|s| s.parse::<i32>().unwrap()).collect())
+        .map(|ss| ss.iter().map(|s| s.parse::<i64>().unwrap()).collect())
         .collect()
 }
 
