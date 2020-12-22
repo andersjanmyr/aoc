@@ -36,7 +36,10 @@ fn play_game(mut p1: VecDeque<u8>, mut p2: VecDeque<u8>) -> (VecDeque<u8>, VecDe
         let c1 = p1.pop_front().unwrap();
         let c2 = p2.pop_front().unwrap();
         if c1 <= p1.len() as u8 && c2 <= p2.len() as u8 {
-            let (r1, _) = play_game(p1.clone(), p2.clone());
+            let (r1, _) = play_game(
+                p1.iter().take(c1 as usize).cloned().collect(),
+                p2.iter().take(c2 as usize).cloned().collect(),
+            );
             if r1.len() > 0 {
                 p1.push_back(c1);
                 p1.push_back(c2);
