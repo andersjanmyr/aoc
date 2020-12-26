@@ -24,6 +24,10 @@ impl Dir {
             NE => (0, -1),
         }
     }
+
+    fn dirs() -> Vec<Dir> {
+        vec![E, SE, SW, W, NW, NE]
+    }
 }
 
 use Dir::*;
@@ -43,13 +47,46 @@ fn main() {
             tiles.remove(&coord);
         }
     }
-    println!("Star 1: {}", tiles.len())
+    println!("Star 1: {}", tiles.len());
 
-    // let mut cups = Cups::new(1_000_000, v.clone());
-    // for _ in 0..10_000_000 {
-    //     cups.step()
-    // }
-    // println!("Star 2: {}", cups.next_after(1).take(2).product::<usize>());
+    let dirs = Dir::dirs();
+    for n in 1..=100 {
+        let mut to_white = Vec::new();
+        let mut to_black = Vec::new();
+        let min = tiles.iter().fold((i32::MAX, i32::MAX), |a, i| {
+            let x = if a.0 < i.0 { a.0 } else { i.0 };
+            let y = if a.1 < i.1 { a.1 } else { i.1 };
+            (x - 1, y - 1)
+        });
+        let max = tiles.iter().fold((i32::MIN, i32::MIN), |a, i| {
+            let x = if a.0 > i.0 { a.0 } else { i.0 };
+            let y = if a.1 > i.1 { a.1 } else { i.1 };
+            (x + 1, y + 1)
+        });
+        for i in min.0..max.0 {
+            for j in min.1..max.1 {
+                let adj = dirs.iter().map(|d| {
+                    let (x, y) = d.to_coord();
+                    (x + i, y + j)
+                });
+                let black = tiles.contains(&(i, j));
+                let count = adj.filter(|c| tiles.contains(c)).count();
+                if black && (count == 0 || count > 2) {
+                    to_white.push((i, j));
+                }
+                if !black && count == 2 {
+                    to_black.push((i, j));
+                }
+            }
+        }
+        for p in to_white {
+            tiles.remove(&p);
+        }
+        for p in to_black {
+            tiles.insert(p);
+        }
+        println!("Star 2: {} {}", n, tiles.len());
+    }
 }
 
 fn parse_input(s: &str) -> Vec<Vec<Dir>> {
