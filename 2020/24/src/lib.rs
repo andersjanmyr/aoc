@@ -1,6 +1,4 @@
-use itertools::Itertools;
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs::read_to_string;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
