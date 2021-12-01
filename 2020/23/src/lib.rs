@@ -1,92 +1,94 @@
+use cups::Cups;
+use itertools::Itertools;
 use std::collections::{HashSet, VecDeque};
 use std::fs::read_to_string;
-
-#[derive(Debug)]
-struct Ring {
-    v: Vec<usize>,
-    len: usize,
-}
-
-impl Ring {
-    fn new(v: Vec<usize>) -> Self {
-        let len = v.len();
-        Self { v, len }
-    }
-
-    fn at(&self, i: usize) -> usize {
-        self.v[self.index(i)]
-    }
-
-    fn safe(&self, i: usize) -> usize {
-        if i < 1 {
-            i + self.len
-        } else {
-            i
-        }
-    }
-
-    fn index(&self, ind: usize) -> usize {
-        let mut i = ind - 1;
-        if i < 0 {
-            i + self.len
-        } else {
-            i
-        }
-    }
-
-    fn rm(&mut self, from: usize, count: usize) -> Vec<usize> {
-        let mut ps = (from..from + count)
-            .map(|i| self.index(i))
-            .enumerate()
-            .collect::<Vec<_>>();
-        ps.sort_by(|a, b| b.1.cmp(&a.1));
-        let mut three = vec![0; count];
-        for &(i, p) in &ps {
-            let e = self.v.remove(p);
-            three[i as usize] = e;
-        }
-        three
-    }
-
-    fn insert(&mut self, el: usize, slice: &Vec<usize>) {
-        let mut i = ind + 1;
-        if i < 0 {
-            i += self.v.len()
-        }
-        self.v.splice(i..i, slice.clone());
-    }
-}
 
 fn main() {
     let input = read_to_string("input.txt");
     let data = input.unwrap();
     let v = parse_input(&data);
-    let mut ring = Ring::new(v);
-    println!("{:?}", ring);
-
-    for i in 1..=10 {
-        mov(&mut ring, i);
+    println!("{:?}", v);
+    let mut cups = Cups::new(v.len(), v.clone());
+    for _ in 0..100 {
+        cups.step()
     }
-}
+    println!("Star 1: {}", cups.next_after(1).take(8).join(""));
 
-fn mov(ring: &mut Ring, cur: usize) {
-    let cur_el = ring.at(cur);
-    let mut three = ring.rm(cur + 1, 3);
-    let mut dest = ring.at(cur_el - 1);
-    println!("{:?}({:?}) {:?} {:?}", cur, cur_el, dest, three);
-    ring.insert(dest, &three);
-    println!("{:?}", ring);
-    println!("");
+    let mut cups = Cups::new(1_000_000, v.clone());
+    for _ in 0..10_000_000 {
+        cups.step()
+    }
+    println!("Star 2: {}", cups.next_after(1).take(2).product::<usize>());
 }
 
 fn parse_input(s: &str) -> Vec<usize> {
-    s.trim()
-        .chars()
-        .map(|c| c.to_digit(10).unwrap())
-        .map(|i| i as usize)
+    s.as_bytes()
+        .iter()
+        .filter_map(|b| b.checked_sub(48))
+        .map(|n| n as usize)
         .collect()
 }
 
+mod cups {
+
+    pub struct Cups {
+        /// Each index corresponds to the cup_number. The
+        /// value stored corresponds to the index of the
+        /// next cup in the sequence
+        vec: Vec<usize>,
+        /// This is the index into the vec of the current
+        /// cup.
+        current_cup: usize,
+    }
+
+    impl Cups {
+        /// Given a starting arrangement, give back some Cups. Starting order must
+        /// contain every number from 1 to starting_order.len(); the rest will be
+        /// filled in order.
+        pub fn new(len: usize, starting_order: Vec<usize>) -> Cups {
+            let mut v = vec![0; len + 1];
+            let padding_start = starting_order.iter().copied().max().unwrap_or(0) + 1;
+            let order = starting_order.iter().copied().chain(padding_start..len + 1);
+            for (n, next_n) in order.clone().zip(order.cycle().skip(1)).take(len) {
+                v[n] = next_n;
+            }
+            Cups {
+                vec: v,
+                current_cup: starting_order[0],
+            }
+        }
+        /// Take one turn from the current position:
+        pub fn step(&mut self) {
+            // Take 3 cups clockwise of current:
+            let (t1, t2, t3) = {
+                let mut ts = self.next_after(self.current_cup);
+                (ts.next().unwrap(), ts.next().unwrap(), ts.next().unwrap())
+            };
+            // Find idx of cup to put them in front of:
+            let mut next_cup = self.minus_one_cup(self.current_cup);
+            while t1 == next_cup || t2 == next_cup || t3 == next_cup {
+                next_cup = self.minus_one_cup(next_cup);
+            }
+            // The current index now points to the thing after the last taken cup:
+            self.vec[self.current_cup] = self.vec[t3];
+            // Last taken index now points to what the next_index used to:
+            self.vec[t3] = self.vec[next_cup];
+            // Next index now points to the first taken cup:
+            self.vec[next_cup] = t1;
+            // Current index is now the next cup around:
+            self.current_cup = self.vec[self.current_cup];
+        }
+        /// Return an iterator over the next cups in line from the number given:
+        pub fn next_after(&self, cup: usize) -> impl Iterator<Item = usize> + '_ {
+            std::iter::successors(Some(cup), move |cup| Some(self.vec[*cup])).skip(1)
+        }
+        /// Minus one from the cup number to get the previous one.
+        fn minus_one_cup(&self, n: usize) -> usize {
+            let num_cups = self.vec.len() - 1;
+            (n + (num_cups - 1) - 1) % num_cups + 1
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
