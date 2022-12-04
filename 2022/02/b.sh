@@ -20,9 +20,10 @@ two="XYZ"
     if (b>3) b=1
     break
   }
-  if (a==b) {
+  c=(3+a-b)%3
+  if (c==0) {
     round=3+b
-  } else if (a-b==-1 || (a-b==2))  {
+  } else if (c==2)  {
     round=6+b
   } else {
     round=b
