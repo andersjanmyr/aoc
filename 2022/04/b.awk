@@ -1,5 +1,3 @@
-#! /bin/bash
-gawk '
 BEGIN{
 FS="[,-]"
 }
@@ -10,4 +8,3 @@ FS="[,-]"
 END {
   print sum
 }
-'
