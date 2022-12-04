@@ -9,15 +9,13 @@ two="XYZ"
   c=index(two, $2)
   switch(c) {
   case 1:
-    b=(a-1)
-    if (b<1) b=3
+    b=((1+a)%3)+1
     break
   case 2:
     b=a
     break
   case 3:
-    b=(a+1)
-    if (b>3) b=1
+    b=(a%3)+1
     break
   }
   c=(3+a-b)%3
